@@ -217,7 +217,7 @@ int main()
             } else {
               if(gameover==1){
                 move(0,0);
-                addstr("game over!");
+                addstr("game over! Press ENTER to exit.");
               }
             }
             break;
