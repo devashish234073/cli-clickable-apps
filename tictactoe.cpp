@@ -11,7 +11,7 @@ int maxX[3][3];
 int maxY[3][3];
 int cX[3][3];
 int cY[3][3];
-int debug = 0;
+int debug = 1;
 
 void printbox(int boardX,int boardY,int x,int y){
   minX[boardX][boardY]=x;
@@ -161,7 +161,7 @@ void resetBoard(){
   for(int i=0;i<3;i++){
     for(int j=0;j<3;j++){
       board[i][j]=-1;
-      move(cX[i][j],cY[i][j]);
+      move(cY[i][j],cX[i][j]);
       addch(' ');
     }
   }
@@ -169,9 +169,10 @@ void resetBoard(){
 
 char runARound(){
   resetBoard();
+  sleep(1);
   while(gameover == 0){
     int gotNewCoor = 0;
-    while(gotNewCoor==0){
+    while(gameover==0 && gotNewCoor==0){
       int i= rand()%3;
       int j = rand()%3;
       if(gameover == 0 && board[i][j]!=-1){
@@ -202,19 +203,19 @@ char runARound(){
                   attron(COLOR_PAIR(3));
                   addch((char)ret);
                   attroff(COLOR_PAIR(3));
-                } 
+                }
               }
             } else {
               if(gameover==1){
                 move(0,0);
                 addstr("game over! Press ENTER to exit.");
-              } 
+              }
             }
     }
   }
   return (char)playerWon;
 }
- 
+
 int main(int argc,char *argv[])
 {
   initscr();
@@ -228,15 +229,15 @@ int main(int argc,char *argv[])
   printbox(0,0,2,2);
   printbox(0,1,10,2);
   printbox(0,2,18,2);
-  
+
   printbox(1,0,2,7);
   printbox(1,1,10,7);
   printbox(1,2,18,7);
 
   printbox(2,0,2,12);
   printbox(2,1,10,12);
-  printbox(2,2,18,12);  
-  
+  printbox(2,2,18,12);
+
   resetBoard();
   // Enables keypad mode. This makes (at least for me) mouse events getting
   // reported as KEY_MOUSE, instead as of random letters.
@@ -254,7 +255,7 @@ int main(int argc,char *argv[])
     if(argc==3){
       times = atoi(argv[2]);
     }
-    
+
     for(int i=0;i<times;i++){
       char winner = runARound();
       if(winner=='X'){
@@ -276,7 +277,7 @@ int main(int argc,char *argv[])
     refresh();
     getch();
   } else {
-  for (;;) { 
+  for (;;) {
     int c = wgetch(stdscr);
     // Exit the program on new line fed
     if (c == '\n')
@@ -312,7 +313,7 @@ int main(int argc,char *argv[])
                   attron(COLOR_PAIR(3));
                   addch((char)ret);
                   attroff(COLOR_PAIR(3));
-                } 
+                }
               }
             } else {
               if(gameover==1){
@@ -329,10 +330,10 @@ int main(int argc,char *argv[])
     }
   }//end of for(;;)
   }
- 
+
   printf("\033[?1003l\n"); // Disable mouse movement events, as l = low
 
   endwin();
- 
+
   return 0;
 }
