@@ -1,5 +1,9 @@
 #include <curses.h>
 #include <stdio.h>
+#include<string.h>
+#include <ctime>
+#include <stdlib.h>
+#include<unistd.h>
 
 int minX[3][3];
 int minY[3][3];
@@ -7,7 +11,7 @@ int maxX[3][3];
 int maxY[3][3];
 int cX[3][3];
 int cY[3][3];
-int debug = 1;
+int debug = 0;
 
 void printbox(int boardX,int boardY,int x,int y){
   minX[boardX][boardY]=x;
@@ -46,14 +50,6 @@ void markbox(int boardX,int boardY){
 
 int board[3][3];
 
-void resetBoard(){
-  for(int i=0;i<3;i++){
-    for(int j=0;j<3;j++){
-      board[i][j]=-1;
-    }
-  }
-}
-
 int playerWon=-1;
 int gameover = 0;
 char currChar='X';
@@ -82,11 +78,12 @@ int playAt(int x,int y){
   board[x][y]=currChar;
   boxesFilled++;
   switchChar();
-  if(board[0][0]!=-1 && board[0][0]==board[0][1]){
-    if(board[0][0]==board[0][2]){
+  if(board[0][0]!=-1 && board[0][0]==board[0][1] && board[0][0]==board[0][2]){
+      won[0]=cX[0][0];won[1]=cY[0][0];
+      won[2]=cX[0][1];won[3]=cY[0][1];
+      won[4]=cX[0][2];won[5]=cY[0][2];
       playerWon=board[0][0];
       gameover = 1;
-    }
   } else if(board[0][0]!=-1 && board[0][0]==board[1][0] && board[0][0]==board[2][0]){
       won[0]=cX[0][0];won[1]=cY[0][0];
       won[2]=cX[1][0];won[3]=cY[1][0];
@@ -155,10 +152,71 @@ int playAt(int x,int y){
   }
   return board[x][y];
 }
- 
-int main()
-{
+
+void resetBoard(){
+  playerWon=-1;
+  gameover = 0;
+  currChar='X';
+  boxesFilled = 0;
+  for(int i=0;i<3;i++){
+    for(int j=0;j<3;j++){
+      board[i][j]=-1;
+      move(cX[i][j],cY[i][j]);
+      addch(' ');
+    }
+  }
+}
+
+char runARound(){
   resetBoard();
+  while(gameover == 0){
+    int gotNewCoor = 0;
+    while(gotNewCoor==0){
+      int i= rand()%3;
+      int j = rand()%3;
+      if(gameover == 0 && board[i][j]!=-1){
+        continue;
+      }
+      int ret = playAt(i,j);
+            if(ret!=-1){
+              gotNewCoor = 1;
+              markbox(i,j);
+              move(cY[i][j],cX[i][j]);
+              if(playerWon!=-1){
+                attron(COLOR_PAIR(1));
+                move(won[1],won[0]);
+                addch((char)ret);
+                move(won[3],won[2]);
+                addch((char)ret);
+                move(won[5],won[4]);
+                addch((char)ret);
+                move(1,0);
+                printw("player won %c",(char)playerWon);
+                attroff(COLOR_PAIR(1));
+              } else {
+                if((char)ret=='X'){
+                  attron(COLOR_PAIR(2));
+                  addch((char)ret);
+                  attroff(COLOR_PAIR(2));
+                } else if((char)ret=='O'){
+                  attron(COLOR_PAIR(3));
+                  addch((char)ret);
+                  attroff(COLOR_PAIR(3));
+                } 
+              }
+            } else {
+              if(gameover==1){
+                move(0,0);
+                addstr("game over! Press ENTER to exit.");
+              } 
+            }
+    }
+  }
+  return (char)playerWon;
+}
+ 
+int main(int argc,char *argv[])
+{
   initscr();
   start_color();
   init_pair(1, COLOR_BLACK, COLOR_GREEN);
@@ -178,7 +236,8 @@ int main()
   printbox(2,0,2,12);
   printbox(2,1,10,12);
   printbox(2,2,18,12);  
-
+  
+  resetBoard();
   // Enables keypad mode. This makes (at least for me) mouse events getting
   // reported as KEY_MOUSE, instead as of random letters.
   keypad(stdscr, TRUE);
@@ -186,7 +245,37 @@ int main()
   mousemask(ALL_MOUSE_EVENTS | REPORT_MOUSE_POSITION, NULL);
 
   printf("\033[?1003h\n"); // Makes the terminal report mouse movement events
-
+  int xWonCount = 0;
+  int oWonCount = 0;
+  int noWonCount = 0;
+  if(argc>=2 && strcmp(argv[1],"ai-mode")==0){
+    int times = 1;
+    srand((unsigned) time(0));
+    if(argc==3){
+      times = atoi(argv[2]);
+    }
+    
+    for(int i=0;i<times;i++){
+      char winner = runARound();
+      if(winner=='X'){
+        xWonCount++;
+      } else if(winner=='O'){
+        oWonCount++;
+      } else {
+        noWonCount++;
+      }
+      refresh();
+      sleep(1);
+    }
+    move(20,0);
+    printw("'X' won %d times",xWonCount);
+    move(21,0);
+    printw("'O' won %d times",oWonCount);
+    move(22,0);
+    printw("no-one won %d times",noWonCount);
+    refresh();
+    getch();
+  } else {
   for (;;) { 
     int c = wgetch(stdscr);
     // Exit the program on new line fed
@@ -213,6 +302,7 @@ int main()
                 addch((char)ret);
                 move(1,0);
                 printw("player won %c",(char)playerWon);
+                attroff(COLOR_PAIR(1));
               } else {
                 if((char)ret=='X'){
                   attron(COLOR_PAIR(2));
@@ -237,6 +327,7 @@ int main()
         }
       }
     }
+  }//end of for(;;)
   }
  
   printf("\033[?1003l\n"); // Disable mouse movement events, as l = low
@@ -245,4 +336,3 @@ int main()
  
   return 0;
 }
-
