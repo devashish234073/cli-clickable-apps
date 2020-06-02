@@ -162,6 +162,8 @@ int main()
   initscr();
   start_color();
   init_pair(1, COLOR_BLACK, COLOR_GREEN);
+  init_pair(2, COLOR_BLUE, COLOR_BLACK);
+  init_pair(3, COLOR_RED, COLOR_BLACK);
   cbreak();
   noecho();
 
@@ -212,7 +214,15 @@ int main()
                 move(1,0);
                 printw("player won %c",(char)playerWon);
               } else {
-                addch((char)ret);
+                if((char)ret=='X'){
+                  attron(COLOR_PAIR(2));
+                  addch((char)ret);
+                  attroff(COLOR_PAIR(2));
+                } else if((char)ret=='O'){
+                  attron(COLOR_PAIR(3));
+                  addch((char)ret);
+                  attroff(COLOR_PAIR(3));
+                } 
               }
             } else {
               if(gameover==1){
@@ -235,3 +245,4 @@ int main()
  
   return 0;
 }
+
